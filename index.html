@@ -2049,7 +2049,7 @@ function renderAll() {
 // ============================================================
 // USERS / PROFILES
 // ============================================================
-function addUser() {
+async function addUser() {
   const name = document.getElementById('newUserName').value.trim();
   const role = document.getElementById('newUserRole').value.trim();
   const salary = parseFloat(document.getElementById('newUserSalary').value) || 0;
@@ -2064,11 +2064,31 @@ function addUser() {
   };
   state.users.push(user);
   saveState();
+
+  // ✅ SAVE TO SUPABASE
+  if (USE_DB) {
+    const { error } = await supabaseClient.from('users').upsert([{
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      salary: user.salary,
+      color: user.color,
+      savings_pct: user.savingsPct,
+      initials: user.initials
+    }]);
+    if (error) {
+      console.error('Save user error:', error);
+      showToast('❌ Error saving to database: ' + error.message, 'error');
+    } else {
+      showToast(`✅ ${name} saved to cloud!`, 'success');
+    }
+  }
+
   closeModal('addUserModal');
   clearForm(['newUserName','newUserRole','newUserSalary','newUserSavingsPct']);
   renderAll();
-  showToast(`✅ ${name} added successfully!`, 'success');
 }
+
 
 function deleteUser(id) {
   if (!confirm('Delete this user? This will not delete their expenses.')) return;
